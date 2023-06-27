@@ -1,0 +1,77 @@
+import { revalidateTag } from 'next/cache';
+
+async function initTransaction(formData: FormData) {
+  'use server';
+  const shares = formData.get('shares');
+  const price = formData.get('price');
+  const wallet_id = formData.get('wallet_id');
+  const asset_id = formData.get('asset_id');
+  const type = formData.get('type');
+
+  //   console.log(shares, price);
+  const response = await fetch(
+    `http://localhost:8000/wallets/${wallet_id}/orders`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        shares,
+        price,
+        asset_id,
+        type,
+        status: 'OPEN',
+        Asset: {
+          id: asset_id,
+          symbol: 'PETR4',
+          price: 30,
+        },
+      }),
+    }
+  );
+  revalidateTag(`order-wallet-${wallet_id}`);
+  return await response.json();
+}
+
+export function OrderForm(props: { asset_id: string; wallet_id: string }) {
+  return (
+    <div>
+      <h1>Order Form</h1>
+      <form action={initTransaction}>
+        <input
+          type="hidden"
+          name="asset_id"
+          defaultValue={props.asset_id}
+        />
+        <input
+          type="hidden"
+          name="wallet_id"
+          defaultValue={props.wallet_id}
+        />
+        <input
+          type="hidden"
+          name="type"
+          defaultValue={'BUY'}
+        />
+
+        <input
+          name="shares"
+          type="number"
+          min={1}
+          step={1}
+          placeholder="quantidade"
+        />
+        <br />
+        <input
+          name="price"
+          type="number"
+          min={1}
+          step={1}
+          placeholder="preço"
+        />
+        <button>Comprar</button>
+      </form>
+    </div>
+  );
+}
